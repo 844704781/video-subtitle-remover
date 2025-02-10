@@ -28,12 +28,14 @@ def remove_subtitle():
         return jsonify({'error': 'task_id and video_path are required'}), 400
 
     if task_id in tasks:
-        return jsonify({'error': 'Task already exists'}), 400
+        task = tasks.get(task_id)
+        return jsonify({'task_id': task_id, 'progress': task['progress'], 'status': task['status'],
+                        'output_file': task.get('output_file')}), 200
     tasks[task_id] = {'progress': 0, 'status': 'running'}
     thread = threading.Thread(target=run_subtitle_remover, args=(task_id, video_path, sub_area))
     thread.start()
 
-    return jsonify({'task_id': task_id, 'status': 'started'}), 202
+    return jsonify({'task_id': task_id, 'status': 'started'}), 200
 
 
 @app.route('/task_progress/<task_id>', methods=['GET'])
