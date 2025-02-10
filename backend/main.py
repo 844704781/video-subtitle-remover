@@ -509,7 +509,7 @@ class SubtitleDetect:
 
 
 class SubtitleRemover:
-    def __init__(self, vd_path, sub_area=None, gui_mode=False):
+    def __init__(self, vd_path, sub_area=None, gui_mode=False, progress_callback=None):
         importlib.reload(config)
         # 线程锁
         self.lock = threading.RLock()
@@ -561,6 +561,8 @@ class SubtitleRemover:
         self.preview_frame = None
         # 是否将原音频嵌入到去除字幕后的视频
         self.is_successful_merged = False
+        # 添加progress_callback参数
+        self.progress_callback = progress_callback
 
     @staticmethod
     def get_coordinates(dt_box):
@@ -609,6 +611,9 @@ class SubtitleRemover:
         current_percentage = (tbar.n / tbar.total) * 100
         self.progress_remover = int(current_percentage) // 2
         self.progress_total = 50 + self.progress_remover
+        # 调用回调函数报告进度
+        if self.progress_callback:
+            self.progress_callback(self.progress_total)
 
     def propainter_mode(self, tbar):
         print('use propainter mode')
@@ -813,6 +818,9 @@ class SubtitleRemover:
             tbar.update(1)
             self.progress_remover = 100 * float(index) / float(self.frame_count) // 2
             self.progress_total = 50 + self.progress_remover
+            # 调用回调函数报告进度
+            if self.progress_callback:
+                self.progress_callback(self.progress_total)
 
     def run(self):
         # 记录开始时间
@@ -917,7 +925,10 @@ if __name__ == '__main__':
     # sub_area = (ymin, ymax, xmin, xmax)
     # 3. 新建字幕提取对象
     if is_video_or_image(video_path):
-        sd = SubtitleRemover(video_path, sub_area=None)
+        # 使用示例:
+        def progress_handler(progress):
+            print(f"当前进度: {progress}%")
+        sd = SubtitleRemover(video_path, sub_area=None, progress_callback=progress_handler)
         sd.run()
     else:
         print(f'Invalid video path: {video_path}')
